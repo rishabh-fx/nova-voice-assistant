@@ -1,0 +1,8 @@
+.env
+.streamlit/secrets.toml
+__pycache__/
+.venv/
+.DS_Store
+
+# Not part of the app
+Claude outputs/
