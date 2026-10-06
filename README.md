@@ -4,6 +4,8 @@ Nova is a voice assistant you can use from **any device with a browser**: phone,
 You speak (or type), a **cloud LLM on Azure OpenAI** decides what to do using **function calling**,
 Nova runs the right tools, and the answer is **read back to you aloud**.
 
+**🔗 Live demo:** [nova-voice.streamlit.app](https://nova-voice.streamlit.app) · works on phone and desktop (Chrome, Edge or Safari for voice)
+
 ```
  🎤 visitor's browser                        ☁️ Streamlit app (server)                    🌐 services
  ────────────────────                        ─────────────────────────                    ───────────
