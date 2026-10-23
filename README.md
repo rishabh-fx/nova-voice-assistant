@@ -58,24 +58,6 @@ streamlit run app.py          # web app with voice -> http://localhost:8501
 python main.py --verbose      # terminal mode: shows tool calls, tokens and latency
 ```
 
-## Put it online (free): Streamlit Community Cloud
-
-1. Push this folder to a **GitHub** repository. `.env` is git-ignored, so check that it is **not** in the repo.
-2. Go to **share.streamlit.io** → sign in with GitHub → **Create app** → pick the repo, branch, and `app.py`.
-3. Open **Advanced settings → Secrets** and paste your settings in TOML format:
-   ```toml
-   LLM_BASE_URL = "https://<your-resource>.openai.azure.com/openai/v1/"
-   LLM_API_KEY = "<your key>"
-   CHAT_MODEL = "<your deployment name>"
-   MAX_MESSAGES_PER_SESSION = "40"
-   # ACCESS_CODE = "something-only-friends-know"
-   # TAVILY_API_KEY = "<optional>"
-   ```
-4. **Deploy.** You get a public `https://<name>.streamlit.app` link that works on phones and laptops.
-   The site is served over HTTPS, which browsers require before they allow microphone access.
-
-**Protect your Azure credit:** set a budget alert in Azure (Cost Management → Budgets), keep
-`MAX_MESSAGES_PER_SESSION` low, and set an `ACCESS_CODE` if you share the link widely.
 
 ## Project structure
 
