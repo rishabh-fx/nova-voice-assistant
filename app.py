@@ -71,7 +71,7 @@ def run_in_browser(reply=None, voice_lang="en-US", voice_names=(), urls=()):
     speechSynthesis so speech continues even after Streamlit re-renders."""
     js_text = json.dumps(for_speech(reply) if reply else "").replace("</", "<\\/")
     js_urls = json.dumps(list(urls)).replace("</", "<\\/")
-    components.html(f"""
+    _embed_script(f"""
     <script>
       const w = (() => {{ try {{ return window.parent.speechSynthesis ? window.parent : window; }}
                           catch (e) {{ return window; }} }})();
@@ -86,7 +86,10 @@ def run_in_browser(reply=None, voice_lang="en-US", voice_names=(), urls=()):
         return voices.find(v => v.lang.replace("_", "-") === lang) || null;
       }}
 
+      let spoken = false;               // speak once, even if both triggers below fire
       function speak() {{
+        if (spoken) return;
+        spoken = true;
         w.speechSynthesis.cancel();
         const u = new w.SpeechSynthesisUtterance(text);
         u.lang = lang;
@@ -100,11 +103,20 @@ def run_in_browser(reply=None, voice_lang="en-US", voice_names=(), urls=()):
         if (w.speechSynthesis.getVoices().length) speak();
         else {{
           w.speechSynthesis.addEventListener("voiceschanged", speak, {{ once: true }});
-          setTimeout(() => {{ if (!w.speechSynthesis.speaking) speak(); }}, 700);
+          setTimeout(speak, 700);
         }}
       }}
       for (const url of {js_urls}) {{ try {{ w.open(url, "_blank", "noopener"); }} catch (e) {{}} }}
-    </script>""", height=0)
+    </script>""")
+
+
+def _embed_script(html):
+    """Run our own script in a hidden iframe. st.iframe replaces the deprecated
+    components.html in newer Streamlit; fall back to it on older versions."""
+    if hasattr(st, "iframe"):
+        st.iframe(html, height=1)          # st.iframe needs a positive height; 1px is invisible
+    else:
+        components.html(html, height=0)
 
 
 def show_message(m):
@@ -117,19 +129,6 @@ def show_message(m):
             st.link_button(f"{a['label']} ↗", a["url"])
 
 
-# ------------------------------------------------------------------ optional access code
-if settings.access_code and not st.session_state.get("unlocked"):
-    st.markdown("<div class='nova-hero'><h1>Nova</h1><p>Enter the access code to start.</p></div>",
-                unsafe_allow_html=True)
-    code = st.text_input("Access code", type="password", label_visibility="collapsed",
-                         placeholder="Access code")
-    if code:
-        if code == settings.access_code:
-            st.session_state.unlocked = True
-            st.rerun()
-        st.error("That code isn't right.")
-    st.stop()
-
 ss = st.session_state
 ss.setdefault("messages", [])
 ss.setdefault("count", 0)
@@ -139,7 +138,7 @@ with st.sidebar:
     st.header("Settings")
     lang = LANGUAGES[st.selectbox("Language", list(LANGUAGES))]
     speak = st.toggle("Read replies aloud", value=True)
-    if st.button("New conversation", use_container_width=True):
+    if st.button("New conversation", width="stretch"):
         ss.messages, ss.count = [], 0
         if "agent" in ss:
             ss.agent.reset()
@@ -167,7 +166,7 @@ examples_slot = st.empty()
 if not ss.messages:
     cols = examples_slot.container().columns(2)
     for i, ex in enumerate(EXAMPLES):
-        if cols[i % 2].button(ex, use_container_width=True, key=f"ex{i}"):
+        if cols[i % 2].button(ex, width="stretch", key=f"ex{i}"):
             prompt = ex
 
 spoken = speech_to_text(language=lang, start_prompt="🎤  Tap to speak", stop_prompt="⏹  Stop listening",

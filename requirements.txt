@@ -1,6 +1,6 @@
-streamlit>=1.43
-streamlit-mic-recorder>=0.0.8
-openai>=1.40
-requests>=2.31
-ddgs>=9.0
-python-dotenv>=1.0
+streamlit>=1.50,<2
+streamlit-mic-recorder>=0.0.8,<0.1
+openai>=1.40,<4
+requests>=2.31,<3
+ddgs>=9.0,<10
+python-dotenv>=1.0,<2

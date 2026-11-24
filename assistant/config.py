@@ -45,8 +45,7 @@ class Settings:
     # Optional: Tavily key for higher-quality web answers. Empty -> free DuckDuckGo search.
     tavily_api_key: str = field(default_factory=lambda: _get("TAVILY_API_KEY"))
 
-    # Protecting the public app (and your cloud bill)
-    access_code: str = field(default_factory=lambda: _get("ACCESS_CODE"))          # empty = open to everyone
+    # Protecting your cloud bill
     max_messages: int = field(default_factory=lambda: _int("MAX_MESSAGES_PER_SESSION", 40))
 
     def check(self):

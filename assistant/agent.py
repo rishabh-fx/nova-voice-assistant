@@ -68,6 +68,7 @@ class Agent:
 
     def run(self, user_text: str) -> AgentResult:
         t0 = time.perf_counter()
+        self.tools.pop_actions()          # drop actions left over from a turn that failed midway
         result = AgentResult(reply="")
         messages = ([{"role": "system", "content": self.system_prompt}]
                     + self.history[-2 * self.history_turns:]
@@ -102,8 +103,7 @@ class Agent:
                 else:
                     out = self.tools.execute(tc.function.name, args)
                 result.tool_calls.append(ToolCallRecord(tc.function.name, args, out))
-                messages.append({"role": "tool", "tool_call_id": tc.id,
-                                 "content": json.dumps(out, ensure_ascii=False)})
+                messages.append({"role": "tool", "tool_call_id": tc.id, "content": _to_json(out)})
         else:
             result.reply = "Sorry, that took too many steps. Could you rephrase?"
 
@@ -112,6 +112,14 @@ class Agent:
                          {"role": "assistant", "content": result.reply}]
         result.latency_s = round(time.perf_counter() - t0, 3)
         return result
+
+
+def _to_json(out):
+    """Tool result -> JSON text for the LLM. Never raises, so one odd result can't end the turn."""
+    try:
+        return json.dumps(out, ensure_ascii=False, default=str, allow_nan=False)
+    except (TypeError, ValueError) as e:
+        return json.dumps({"error": f"tool result could not be sent: {e}"[:300]})
 
 
 def make_client(settings):

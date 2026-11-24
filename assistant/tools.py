@@ -38,26 +38,40 @@ _OPS = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul,
 _FUNCS = {"sqrt": math.sqrt, "log": math.log, "log10": math.log10, "sin": math.sin,
           "cos": math.cos, "tan": math.tan, "abs": abs, "round": round}
 _CONSTS = {"pi": math.pi, "e": math.e}
+_MAX_ABS = 10 ** 300          # bigger results are refused: keeps every step fast and JSON-safe
+
+
+def _checked(value):
+    """Reject results that are too big, infinite, NaN or complex (e.g. (-8)**0.5)."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ValueError("result is not a real number")
+    if isinstance(value, float) and not math.isfinite(value):
+        raise ValueError("result is too large or undefined")
+    if abs(value) > _MAX_ABS:
+        raise ValueError("result is too large")
+    return value
 
 
 def safe_eval(expr: str) -> float:
     """Evaluate arithmetic WITHOUT Python's eval() (which could run arbitrary code).
     Parses the expression into a syntax tree and only allows numbers, + - * / // % **,
-    and a few math functions."""
+    and a few math functions. Every intermediate result is size-checked, so nested
+    powers like ((9**99)**99)**99 are refused instead of tying up the server."""
     def ev(node):
         if isinstance(node, ast.Expression):
             return ev(node.body)
-        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
-            return node.value
+        if (isinstance(node, ast.Constant) and isinstance(node.value, (int, float))
+                and not isinstance(node.value, bool)):
+            return _checked(node.value)
         if isinstance(node, ast.BinOp) and type(node.op) in _OPS:
             left, right = ev(node.left), ev(node.right)
             if isinstance(node.op, ast.Pow) and abs(right) > 100:
                 raise ValueError("exponent too large")
-            return _OPS[type(node.op)](left, right)
+            return _checked(_OPS[type(node.op)](left, right))
         if isinstance(node, ast.UnaryOp) and type(node.op) in _OPS:
-            return _OPS[type(node.op)](ev(node.operand))
+            return _checked(_OPS[type(node.op)](ev(node.operand)))
         if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id in _FUNCS:
-            return _FUNCS[node.func.id](*[ev(a) for a in node.args])
+            return _checked(_FUNCS[node.func.id](*[ev(a) for a in node.args]))
         if isinstance(node, ast.Name) and node.id in _CONSTS:
             return _CONSTS[node.id]
         raise ValueError(f"unsupported expression: {ast.dump(node)[:60]}")
@@ -66,10 +80,11 @@ def safe_eval(expr: str) -> float:
 
 
 def site_url(site: str) -> str:
-    s = site.strip().lower()
-    if s in SITES:
-        return SITES[s]
-    if s.startswith(("http://", "https://")):
+    s = site.strip()
+    key = s.lower()                      # lowercase only for matching: URL paths are case-sensitive
+    if key in SITES:
+        return SITES[key]
+    if key.startswith(("http://", "https://")):
         return s
     if "." in s and " " not in s:
         return "https://" + s

@@ -32,7 +32,7 @@ Nova runs the right tools, and the answer is **read back to you aloud**.
 - **Correct local time** for every visitor (timezone comes from their browser).
 - **Session memory**: follow-up questions work. Nothing is stored after the page is closed.
 - **Bilingual**: English and Hindi for voice input and spoken replies.
-- **Safe for a public link**: optional access code, a per-session message cap, maths without `eval()`,
+- **Safe for a public link**: a per-session message cap, maths without `eval()`,
   and web results treated as untrusted data.
 
 ## Tools
@@ -57,7 +57,6 @@ cp .env.example .env          # fill in your Azure endpoint, key and deployment 
 streamlit run app.py          # web app with voice -> http://localhost:8501
 python main.py --verbose      # terminal mode: shows tool calls, tokens and latency
 ```
-
 
 ## Project structure
 
